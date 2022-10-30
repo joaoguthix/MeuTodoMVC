@@ -4,6 +4,7 @@ using MeuTodo.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace MeuTodo.Controllers
@@ -26,17 +27,17 @@ namespace MeuTodo.Controllers
         }
 
         [HttpGet]
-         //parametro de rota "{}"
+        //parametro de rota "{}"
         [Route("todos/{id}")]
         public async Task<IActionResult> GetByIdAsync(
            [FromServices] AppDbContext context,
            [FromRoute] int id)
-        { 
+        {
             var todo = await context
                 .Todos
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
-            return todo == null 
+            return todo == null
                 ? NotFound()
                 : Ok(todo);
         }
@@ -48,9 +49,9 @@ namespace MeuTodo.Controllers
             [FromBody] CreateTodoViewModels model)
         {
             if (!ModelState.IsValid)
-            
+
                 return BadRequest();
-            
+
             var todo = new Todo
             {
                 Date = DateTime.Now,
@@ -64,9 +65,59 @@ namespace MeuTodo.Controllers
                 await context.SaveChangesAsync();
                 return Created($"v1/todos/{todo.Id}", todo);
             }
-            catch(Exception )
+            catch (Exception)
             {
-               return BadRequest();
+                return BadRequest();
+            }
+        }
+        [HttpPut("todos/{id}")]
+        public async Task<IActionResult> PutAsync(
+            [FromServices] AppDbContext context,
+            [FromBody] CreateTodoViewModels model,
+            [FromRoute] int id)
+        {
+            if (!ModelState.IsValid)
+
+                return BadRequest();
+
+            var todo = await context
+                .Todos
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (todo == null)
+                return NotFound();
+
+            try
+            {
+
+                todo.Title = model.Title;
+
+                context.Todos.Update(todo);
+                await context.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception)
+            {
+                return BadRequest();
+            }
+        }
+        [HttpDelete("Todos/{id}")]
+        public async Task<IActionResult> DeleteAsync(
+            [FromServices] AppDbContext context,
+            [FromRoute] int id)
+        {
+            var todo = await context
+                .Todos.FirstOrDefaultAsync(x => x.Id == id);
+            try
+            {
+                context.Todos.Remove(todo);
+                await context.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch (Exception) { 
+
+                return BadRequest();
             }
         }
     }
